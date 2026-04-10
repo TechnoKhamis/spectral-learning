@@ -1,0 +1,143 @@
+# Spectral Learning — PCA & SVD from Scratch
+
+Dimensionality reduction on the Wine Quality dataset using Principal Component Analysis (PCA) and Singular Value Decomposition (SVD), both implemented from scratch using NumPy.
+
+---
+
+## Objectives
+
+- Implement PCA and SVD without scikit-learn's decomposition classes
+- Understand the mechanics of eigenvalue decomposition and matrix factorization
+- Evaluate reduced representations using clustering and variance metrics
+- Visualize data structure in 2D/3D reduced space
+
+---
+
+## Project Structure
+
+```
+spectral-learning/
+├── data/
+│   ├── winequality-red.csv
+│   └── winequality-white.csv
+├── models/
+│   ├── pca_model.py       # PCA from scratch (eig decomposition)
+│   ├── svd_model.py       # SVD from scratch (numpy.linalg.svd)
+│   └── __init__.py
+├── utils/
+│   ├── data_loader.py     # Load + standardize Wine Quality data
+│   ├── matrix_operations.py  # Shared: center_matrix, covariance_matrix, reconstruct
+│   ├── clustering.py      # K-Means + silhouette scoring + optimal k sweep
+│   ├── visualization.py   # All plots: variance, 2D/3D, clusters, loadings
+│   └── __init__.py
+├── main.py                # Full pipeline
+├── README.md
+└── requirements.txt
+```
+
+---
+
+## Setup
+
+```bash
+# 1. Clone the repo
+git clone <repo-url>
+cd spectral-learning
+
+# 2. Create a virtual environment (optional but recommended)
+python -m venv venv
+source venv/bin/activate   # Windows: venv\Scripts\activate
+
+# 3. Install dependencies
+pip install -r requirements.txt
+
+# 4. Place the dataset files in ./data/
+#    Download from: https://archive.ics.uci.edu/dataset/186/wine+quality
+#    Files needed: winequality-red.csv, winequality-white.csv
+```
+
+---
+
+## Usage
+
+```bash
+python main.py
+```
+
+This runs the full pipeline and saves all plots as PNG files.
+
+---
+
+## Algorithms
+
+### PCA (Principal Component Analysis)
+
+PCA finds directions of maximum variance by solving the eigenvalue problem on the covariance matrix.
+
+**Steps:**
+1. Center the data: subtract column-wise mean
+2. Compute covariance matrix: `C = Xᵀ X / (n-1)`
+3. Eigendecomposition: `C v = λ v` using `numpy.linalg.eig`
+4. Sort eigenvectors by descending eigenvalue
+5. Select top k components based on cumulative variance threshold
+6. Project: `Z = X_centered @ Vᵀ`
+
+Components are chosen to retain **≥80% of total variance** (auto-selected).
+
+### SVD (Singular Value Decomposition)
+
+SVD factorises the centered data matrix directly: `X = U Σ Vᵀ`
+
+**Steps:**
+1. Center the data
+2. Decompose using `numpy.linalg.svd`
+3. Variance explained: `λᵢ = σᵢ² / (n-1)`, normalised over all components
+4. Select top k right singular vectors (rows of Vᵀ)
+5. Project: `Z = X_centered @ Vᵀₖ`
+
+**PCA vs SVD**: On centered data, both are mathematically equivalent — the right singular vectors of X equal the eigenvectors of the covariance matrix, and singular values relate to eigenvalues via `σᵢ² = (n-1)λᵢ`.
+
+---
+
+## Outputs
+
+| Plot | Description |
+|------|-------------|
+| `variance_plot.png` | Cumulative variance explained — PCA vs SVD side-by-side |
+| `2d_plot.png` | 2D scatter coloured by quality / cluster label |
+| `3d_plot.png` | 3D scatter — PCA vs SVD |
+| `clusters_plot.png` | K-Means clusters with centroids |
+| `cluster_subsets.png` | Clusters broken down by each wine quality score |
+| `feature_loadings.png` | Feature contributions to each principal component |
+| `silhouette_sweep.png` | Silhouette scores across k values to justify cluster count |
+
+---
+
+## Overfitting in Dimensionality Reduction
+
+PCA and SVD are unsupervised — they do not fit a predictive model, so classical overfitting (high train/test error gap) does not apply directly. However:
+
+- **Too few components** → underfitting: important variance is discarded
+- **Too many components** → noise retained: downstream models may overfit
+- **Mitigation**: components are selected by a variance threshold (80%) rather than a fixed number. This makes the selection data-driven and reproducible.
+
+---
+
+## Dataset
+
+[Wine Quality Dataset](https://archive.ics.uci.edu/dataset/186/wine+quality) — UCI Machine Learning Repository  
+6,497 samples (1,599 red + 4,898 white), 11 physicochemical features, quality score 3–8.
+
+---
+
+## Dependencies
+
+See `requirements.txt`. Key libraries:
+
+| Library | Purpose |
+|---------|---------|
+| numpy | Matrix ops, eigendecomposition, SVD |
+| pandas | Data loading |
+| scikit-learn | K-Means clustering only |
+| matplotlib | All visualizations |
+| seaborn | Plot styling |
